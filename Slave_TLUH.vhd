@@ -13,36 +13,22 @@
 -- Dependencies: 
 -- 
 -- Revision:
--- Revision 1 - 30/05/2024 - Design Fully Tested
--- Revision 2 - 07/06/2024 - Corrected error in registers process and added the peripheral action
+-- Revision 1 - 30/05/2024 - File Creation and First Test
+-- Revision 2 - 07/06/2024 - Corrected error in registers process and added the peripheral logic section
 -- Additional Comments: -
 -- 
 ----------------------------------------------------------------------------------
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.NUMERIC_STD.ALL;
-
-PACKAGE arr_pkg IS
-    type mem_array is array (0 to 15) of std_logic_vector(31 downto 0); -- si quieres parametrizar 
-                                                                        -- type mem_array is array (natural range <>) of std_logic_vector(31 downto 0);
-END; 
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
-
-use work.arr_pkg.all;
 
 entity Slave_TLUH is
  Generic(
-    Slave_ADDR : integer := 1 -- Si quieres parametrizar aquí añadele REGS_NUM como generico
+    Slave_ADDR : integer := 1 -- Si quieres parametrizar aquÃ­ aÃ±adele REGS_NUM como generico
  );
  
  Port (
-    
-    -- Registers from peripheral --
-    registers_from_peripheral: in mem_array; -- Si quieres parametrizar:  mem_array(0 to REGS_NUM)
-    
     -- Clock and Reset --
     clk: in std_logic;
     rst: in std_logic;
@@ -90,12 +76,13 @@ end Slave_TLUH;
 
 architecture Behavioral of Slave_TLUH is
 
---type regs_array is array (0 to 15) of std_logic_vector(31 downto 0); -- 16x 4 bytes => 64 bytes
+type mem_array is array (0 to 15) of std_logic_vector(31 downto 0); -- is array (natural range <>)
+
 signal registers : mem_array := (x"00000001", x"00000002", x"00000003", x"00000004", x"00000005", x"00000006"
                                     , x"00000007", x"00000008", x"00000009", x"0000000A", x"0000000B", x"0000000C"
-                                    , x"0000000D", x"0000000E", x"0000000F", x"00000010"); -- Aquí tb añadir REGS_NUM
+                                    , x"0000000D", x"0000000E", x"0000000F", x"00000010"); -- AquÃ­ tb aÃ±adir REGS_NUM
 
-signal registers_sig: mem_array; -- Aquí tb añadir REGS_NUM
+signal registers_sig, registers_from_peripheral: mem_array; -- AquÃ­ tb aÃ±adir REGS_NUM
                                     
 signal data_in, data_out : std_logic_vector(31 downto 0);
 signal max_slv, maxu_slv : std_logic_vector(31 downto 0);
@@ -242,8 +229,13 @@ begin
     data_out <= std_logic_vector(shift_right(unsigned(registers(to_integer(unsigned(int_addr)))),8*to_integer(offset))) when get_regs = '1' else
                 registers(to_integer(unsigned(int_addr))) when (arith_event or logical_event) = '1' else
                 (others => '0');                
+ 
+ -- ADD HERE PERIPHERAL LOGIC --
+    registers_from_peripheral <= registers; -- without peripheral logic nothing is changed
+ 
+ -- END PERIPHERAL LOGIC --
                
--- Handshaking signals of Channel A and D 
+-- Handshaking signals of Channel A and D --
     a_ready <= d_ready;
     d_valid <= a_valid;
 
